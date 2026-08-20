@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  analyze:
+    name: Analyze & Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changes lib test
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: analyze
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Run tests
+        run: flutter test --no-pub --coverage
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+
+  build-apk:
+    name: Build APK
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Decode release keystore
+        env:
+          COSMIC_KEYSTORE_BASE64: ${{ secrets.COSMIC_KEYSTORE_BASE64 }}
+          COSMIC_KEYSTORE_PASSWORD: ${{ secrets.COSMIC_KEYSTORE_PASSWORD }}
+          COSMIC_KEY_ALIAS: ${{ secrets.COSMIC_KEY_ALIAS }}
+          COSMIC_KEY_PASSWORD: ${{ secrets.COSMIC_KEY_PASSWORD }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ "$GITHUB_REF" = "refs/heads/main" ] && \
+             { [ -z "$COSMIC_KEYSTORE_BASE64" ] || \
+               [ -z "$COSMIC_KEYSTORE_PASSWORD" ] || \
+               [ -z "$COSMIC_KEY_ALIAS" ] || \
+               [ -z "$COSMIC_KEY_PASSWORD" ] || \
+               [ -z "$SUPABASE_ANON_KEY" ]; }; then
+            echo "Release signing and Supabase secrets are required on main."
+            exit 1
+          fi
+          if [ -n "$COSMIC_KEYSTORE_BASE64" ]; then
+            echo "$COSMIC_KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+          fi
+      - name: Build release APK
+        env:
+          COSMIC_KEYSTORE_PATH: release.keystore
+          COSMIC_KEYSTORE_PASSWORD: ${{ secrets.COSMIC_KEYSTORE_PASSWORD }}
+          COSMIC_KEY_ALIAS: ${{ secrets.COSMIC_KEY_ALIAS }}
+          COSMIC_KEY_PASSWORD: ${{ secrets.COSMIC_KEY_PASSWORD }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: flutter build apk --release --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: cosmic-wish-apks
+          path: build/app/outputs/flutter-apk/*.apk
+          retention-days: 30
+
+  deploy-edge:
+    name: Deploy Edge Function
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Deploy generate-wish
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          supabase link --project-ref $SUPABASE_PROJECT_REF
+          supabase db push --linked
+          supabase functions deploy generate-wish --project-ref $SUPABASE_PROJECT_REF
+          supabase functions deploy admin --project-ref $SUPABASE_PROJECT_REF

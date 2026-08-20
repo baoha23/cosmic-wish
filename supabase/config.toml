@@ -1,0 +1,7 @@
+project_id = "cosmic-wish"
+
+[functions.generate-wish]
+verify_jwt = true
+
+[functions.admin]
+verify_jwt = true

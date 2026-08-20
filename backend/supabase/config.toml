@@ -1,0 +1,7 @@
+# Supabase project config for Cosmic Wish
+# https://supabase.com/docs/guides/functions/config
+
+project_id = "cosmic-wish"
+
+[functions.generate-wish]
+verify_jwt = false

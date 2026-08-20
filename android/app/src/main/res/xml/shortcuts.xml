@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="new_wish"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_new_wish_short"
+        android:shortcutLongLabel="@string/shortcut_new_wish_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.cosmic.cosmic_wish"
+            android:targetClass="com.cosmic.cosmic_wish.MainActivity" />
+        <categories android:name="android.shortcut.conversation"/>
+    </shortcut>
+</shortcuts>

@@ -1,0 +1,96 @@
+# Phát hành APK mới cho cơ chế tự cập nhật trong app:
+#   1. Bump version trong pubspec.yaml (ví dụ 1.2.0+2) + cập nhật CHANGELOG
+#   2. git tag v1.2.0 && git push origin v1.2.0
+# Workflow sẽ build 1 APK universal (ký cùng keystore), upload lên
+# Supabase Storage bucket "releases" (public), upsert row app_releases
+# và đính kèm GitHub Release làm bản lưu trữ.
+#
+# Yêu cầu secret: SUPABASE_SERVICE_ROLE_KEY (dashboard → Settings →
+# API) ngoài các secret ký APK đã có. Bucket "releases" phải được
+# tạo public 1 lần (xem backend/README.md).
+
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # tạo GitHub Release đính kèm APK
+
+jobs:
+  release:
+    name: Build & publish universal APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Read version from pubspec
+        run: |
+          echo "VERSION_NAME=$(sed -n 's/^version: \(.*\)+.*/\1/p' pubspec.yaml)" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$(sed -n 's/^version: .*+\(.*\)/\1/p' pubspec.yaml)" >> "$GITHUB_ENV"
+
+      - name: Extract release notes from CHANGELOG
+        run: |
+          # Lấy đoạn văn bản nằm giữa heading thứ 1 và thứ 2 (bản mới nhất).
+          NOTES=$(awk '/^## /{c++; next} c==1 {print}' CHANGELOG.md)
+          echo "NOTES=$(echo "$NOTES" | jq -Rs .)" >> "$GITHUB_ENV"
+
+      - name: Decode release keystore
+        env:
+          COSMIC_KEYSTORE_BASE64: ${{ secrets.COSMIC_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$COSMIC_KEYSTORE_BASE64" ]; then
+            echo "COSMIC_KEYSTORE_BASE64 secret is required for releases."
+            exit 1
+          fi
+          echo "$COSMIC_KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+
+      - name: Build universal release APK
+        env:
+          COSMIC_KEYSTORE_PATH: release.keystore
+          COSMIC_KEYSTORE_PASSWORD: ${{ secrets.COSMIC_KEYSTORE_PASSWORD }}
+          COSMIC_KEY_ALIAS: ${{ secrets.COSMIC_KEY_ALIAS }}
+          COSMIC_KEY_PASSWORD: ${{ secrets.COSMIC_KEY_PASSWORD }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: >
+          flutter build apk --release
+          --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+
+      - name: Upload APK to Supabase Storage
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          curl -sf -X POST \
+            "https://${SUPABASE_PROJECT_REF}.supabase.co/storage/v1/object/releases/cosmic-wish-${VERSION_NAME}.apk" \
+            -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "x-upsert: true" \
+            -H "Content-Type: application/vnd.android.package-archive" \
+            --data-binary @build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Publish release metadata
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          curl -sf -X POST \
+            "https://${SUPABASE_PROJECT_REF}.supabase.co/rest/v1/app_releases" \
+            -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: resolution=merge-duplicates" \
+            -d "{\"version_code\":${VERSION_CODE},\"version_name\":\"${VERSION_NAME}\",\"apk_url\":\"https://${SUPABASE_PROJECT_REF}.supabase.co/storage/v1/object/public/releases/cosmic-wish-${VERSION_NAME}.apk\",\"notes\":${NOTES:-null}}"
+
+      - name: Attach APK to GitHub Release (archive)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --generate-notes \
+            build/app/outputs/flutter-apk/app-release.apk || true
