@@ -16,8 +16,16 @@ class _Preset {
 }
 
 const _presets = <_Preset>[
-  _Preset('MiniMax', 'https://api.minimax.io/v1/chat/completions', 'MiniMax-M2.7'),
-  _Preset('OpenAI', 'https://api.openai.com/v1/chat/completions', 'gpt-4o-mini'),
+  _Preset(
+    'MiniMax',
+    'https://api.minimax.io/v1/chat/completions',
+    'MiniMax-M2.7',
+  ),
+  _Preset(
+    'OpenAI',
+    'https://api.openai.com/v1/chat/completions',
+    'gpt-4o-mini',
+  ),
   _Preset(
     'OpenRouter',
     'https://openrouter.ai/api/v1/chat/completions',
@@ -147,9 +155,11 @@ class _AdminConfigScreenState extends State<AdminConfigScreen> {
       _backToLogin();
     } on AdminException catch (e) {
       if (!mounted) return;
-      setState(() => _notice = e.code == 'invalid-base-url'
-          ? '${l.adminBaseUrl}: ${e.code}'
-          : e.toString());
+      setState(
+        () => _notice = e.code == 'invalid-base-url'
+            ? '${l.adminBaseUrl}: ${e.code}'
+            : e.toString(),
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() => _notice = l.adminNetworkError);
@@ -177,18 +187,22 @@ class _AdminConfigScreenState extends State<AdminConfigScreen> {
       _backToLogin();
     } on AdminException catch (e) {
       if (!mounted) return;
-      setState(() => _testResult = AdminTestResult(
-        ok: false,
-        latencyMs: 0,
-        error: e.toString(),
-      ));
+      setState(
+        () => _testResult = AdminTestResult(
+          ok: false,
+          latencyMs: 0,
+          error: e.toString(),
+        ),
+      );
     } catch (_) {
       if (!mounted) return;
-      setState(() => _testResult = AdminTestResult(
-        ok: false,
-        latencyMs: 0,
-        error: l.adminNetworkError,
-      ));
+      setState(
+        () => _testResult = AdminTestResult(
+          ok: false,
+          latencyMs: 0,
+          error: l.adminNetworkError,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _testing = false);
     }
@@ -205,11 +219,17 @@ class _AdminConfigScreenState extends State<AdminConfigScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l.cancel, style: AppText.body(14, color: AppColors.ash)),
+            child: Text(
+              l.cancel,
+              style: AppText.body(14, color: AppColors.ash),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l.delete, style: AppText.body(14, color: AppColors.gold)),
+            child: Text(
+              l.delete,
+              style: AppText.body(14, color: AppColors.gold),
+            ),
           ),
         ],
       ),
@@ -262,8 +282,8 @@ class _AdminConfigScreenState extends State<AdminConfigScreen> {
                         child: CircularProgressIndicator(color: AppColors.gold),
                       )
                     : _loadError != null
-                        ? _buildError(l)
-                        : _buildForm(context, l),
+                    ? _buildError(l)
+                    : _buildForm(context, l),
               ),
             ],
           ),
@@ -299,16 +319,24 @@ class _AdminConfigScreenState extends State<AdminConfigScreen> {
         _field(
           controller: _baseUrlController,
           hint: 'https://…/v1/chat/completions',
-          onChanged: () => setState(() => _presetName =
-              _presetFor(_baseUrlController.text, _modelController.text)),
+          onChanged: () => setState(
+            () => _presetName = _presetFor(
+              _baseUrlController.text,
+              _modelController.text,
+            ),
+          ),
         ),
         const SizedBox(height: 16),
         _SectionHeader(l.adminModel),
         _field(
           controller: _modelController,
           hint: 'model-name',
-          onChanged: () => setState(() => _presetName =
-              _presetFor(_baseUrlController.text, _modelController.text)),
+          onChanged: () => setState(
+            () => _presetName = _presetFor(
+              _baseUrlController.text,
+              _modelController.text,
+            ),
+          ),
         ),
         const SizedBox(height: 16),
         _SectionHeader(l.adminApiKey),
@@ -340,11 +368,7 @@ class _AdminConfigScreenState extends State<AdminConfigScreen> {
             ? const Center(
                 child: CircularProgressIndicator(color: AppColors.gold),
               )
-            : MysticButton(
-                label: l.adminSave,
-                onPressed: _save,
-                expand: true,
-              ),
+            : MysticButton(label: l.adminSave, onPressed: _save, expand: true),
         const SizedBox(height: 12),
         TextButton(
           onPressed: _reset,
@@ -370,10 +394,7 @@ class _AdminConfigScreenState extends State<AdminConfigScreen> {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.plum.withValues(alpha: 0.3)),
       ),
-      child: Text(
-        label,
-        style: AppText.body(13, color: AppColors.gold),
-      ),
+      child: Text(label, style: AppText.body(13, color: AppColors.gold)),
     );
   }
 
@@ -425,8 +446,10 @@ class _AdminConfigScreenState extends State<AdminConfigScreen> {
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: AppColors.gold),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
       ),
     );
   }
@@ -455,15 +478,18 @@ class _AdminConfigScreenState extends State<AdminConfigScreen> {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  BorderSide(color: AppColors.plum.withValues(alpha: 0.6)),
+              borderSide: BorderSide(
+                color: AppColors.plum.withValues(alpha: 0.6),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: AppColors.gold),
             ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
           ),
         ),
       ],

@@ -46,8 +46,10 @@ void main() {
     test('returns null when already up to date', () async {
       final mock = MockClient(
         (req) async => http.Response.bytes(
-          utf8.encode('[{"version_code":2,"version_name":"1.1.0",'
-              '"apk_url":"https://x/app.apk"}]'),
+          utf8.encode(
+            '[{"version_code":2,"version_name":"1.1.0",'
+            '"apk_url":"https://x/app.apk"}]',
+          ),
           200,
         ),
       );

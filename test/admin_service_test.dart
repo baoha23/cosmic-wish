@@ -51,25 +51,32 @@ void main() {
       await expectLater(
         service.login('wrong'),
         throwsA(
-          isA<AdminException>().having((e) => e.code, 'code', 'invalid-password'),
+          isA<AdminException>().having(
+            (e) => e.code,
+            'code',
+            'invalid-password',
+          ),
         ),
       );
       expect(service.isLoggedIn, isFalse);
     });
 
-    test('expired token on an authed action throws AdminAuthException', () async {
-      final mock = MockClient(
-        (req) async => http.Response.bytes(
-          utf8.encode('{"error":"invalid-token"}'),
-          401,
-        ),
-      );
-      final service = AdminService(client: mock);
-      await expectLater(
-        service.getConfig(),
-        throwsA(isA<AdminAuthException>()),
-      );
-    });
+    test(
+      'expired token on an authed action throws AdminAuthException',
+      () async {
+        final mock = MockClient(
+          (req) async => http.Response.bytes(
+            utf8.encode('{"error":"invalid-token"}'),
+            401,
+          ),
+        );
+        final service = AdminService(client: mock);
+        await expectLater(
+          service.getConfig(),
+          throwsA(isA<AdminAuthException>()),
+        );
+      },
+    );
 
     test('save-config omits blank apiKey (keep stored key)', () async {
       late Map<String, dynamic> requestBody;
@@ -114,7 +121,9 @@ void main() {
         final body = jsonDecode(utf8.decode(req.bodyBytes));
         if (body['action'] == 'test-connection') {
           return http.Response.bytes(
-            utf8.encode('{"ok":false,"latencyMs":120,"status":401,"error":"bad key"}'),
+            utf8.encode(
+              '{"ok":false,"latencyMs":120,"status":401,"error":"bad key"}',
+            ),
             200,
           );
         }
@@ -140,7 +149,11 @@ void main() {
       await expectLater(
         service.resetConfig(),
         throwsA(
-          isA<AdminException>().having((e) => e.code, 'code', 'rate-limit-exceeded'),
+          isA<AdminException>().having(
+            (e) => e.code,
+            'code',
+            'rate-limit-exceeded',
+          ),
         ),
       );
     });

@@ -60,8 +60,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
   int _percent = 0;
   http.Client? _downloadClient;
 
-  AppRelease get _release =>
-      context.read<UpdateState>().availableUpdate!;
+  AppRelease get _release => context.read<UpdateState>().availableUpdate!;
 
   @override
   void dispose() {
@@ -105,15 +104,12 @@ class _UpdateDialogState extends State<_UpdateDialog> {
     final l = AppLocalizations.of(context)!;
     return AlertDialog(
       backgroundColor: AppColors.plum,
-      title: Text(
-        switch (_phase) {
-          _Phase.available ||
-          _Phase.installing => l.updateAvailableTitle(_release.versionName),
-          _Phase.downloading => l.updateDownloading(_percent),
-          _Phase.failed => l.updateFailed,
-        },
-        style: AppText.heading(18),
-      ),
+      title: Text(switch (_phase) {
+        _Phase.available ||
+        _Phase.installing => l.updateAvailableTitle(_release.versionName),
+        _Phase.downloading => l.updateDownloading(_percent),
+        _Phase.failed => l.updateFailed,
+      }, style: AppText.heading(18)),
       content: switch (_phase) {
         _Phase.available => _availableContent(context, l),
         _Phase.downloading => Column(
@@ -135,46 +131,46 @@ class _UpdateDialogState extends State<_UpdateDialog> {
           children: [
             Text(l.updateFailed, style: AppText.body(14)),
             const SizedBox(height: 12),
-            MysticButton(label: l.updateRetry, onPressed: () => _startDownload(l)),
+            MysticButton(
+              label: l.updateRetry,
+              onPressed: () => _startDownload(l),
+            ),
           ],
         ),
       },
       actions: switch (_phase) {
         _Phase.available => [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                l.updateLater,
-                style: AppText.body(14, color: AppColors.parchment),
-              ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              l.updateLater,
+              style: AppText.body(14, color: AppColors.parchment),
             ),
-            TextButton(
-              onPressed: () {
-                context.read<UpdateState>().skipCurrentRelease();
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                l.updateSkipVersion,
-                style: AppText.body(12, color: AppColors.ash),
-              ),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<UpdateState>().skipCurrentRelease();
+              Navigator.of(context).pop();
+            },
+            child: Text(
+              l.updateSkipVersion,
+              style: AppText.body(12, color: AppColors.ash),
             ),
-            TextButton(
-              onPressed: () => _startDownload(l),
-              child: Text(
-                l.updateNow,
-                style: AppText.button(),
-              ),
-            ),
-          ],
+          ),
+          TextButton(
+            onPressed: () => _startDownload(l),
+            child: Text(l.updateNow, style: AppText.button()),
+          ),
+        ],
         _Phase.downloading => [
-            TextButton(
-              onPressed: _cancelDownload,
-              child: Text(
-                l.cancel,
-                style: AppText.body(14, color: AppColors.parchment),
-              ),
+          TextButton(
+            onPressed: _cancelDownload,
+            child: Text(
+              l.cancel,
+              style: AppText.body(14, color: AppColors.parchment),
             ),
-          ],
+          ),
+        ],
         _ => const <Widget>[],
       },
     );
@@ -189,10 +185,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          l.updateWhatsNew,
-          style: AppText.body(12, color: AppColors.gold),
-        ),
+        Text(l.updateWhatsNew, style: AppText.body(12, color: AppColors.gold)),
         const SizedBox(height: 4),
         Text(notes, style: AppText.body(14, color: AppColors.parchment)),
       ],

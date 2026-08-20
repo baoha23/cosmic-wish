@@ -81,10 +81,8 @@ class AdminTestResult {
 /// held in memory only — restarting the app requires logging in
 /// again, by design.
 class AdminService {
-  AdminService({
-    this.baseUrl = SupabaseConfig.adminUrl,
-    http.Client? client,
-  }) : _client = client ?? http.Client();
+  AdminService({this.baseUrl = SupabaseConfig.adminUrl, http.Client? client})
+    : _client = client ?? http.Client();
 
   final String baseUrl;
   final http.Client _client;
@@ -92,6 +90,7 @@ class AdminService {
   String? _token;
 
   static const _callTimeout = Duration(seconds: 20);
+
   /// A test call can include a cold-started upstream model, so it
   /// gets a longer budget than regular actions.
   static const _testTimeout = Duration(seconds: 30);
@@ -110,7 +109,11 @@ class AdminService {
       if (_token != null) 'Authorization': 'Bearer $_token',
     };
     final r = await _client
-        .post(Uri.parse(baseUrl), headers: headers, body: utf8.encode(jsonEncode(body)))
+        .post(
+          Uri.parse(baseUrl),
+          headers: headers,
+          body: utf8.encode(jsonEncode(body)),
+        )
         .timeout(timeout);
     Map<String, dynamic> data;
     try {
@@ -127,7 +130,8 @@ class AdminService {
     // test-connection reports a failed upstream test as HTTP 200 with
     // {ok:false, error}; that's a successful admin call, not a server
     // error. Anything else with an `error` field (or non-200) is one.
-    final isTestOutcome = body['action'] == 'test-connection' && data['ok'] != null;
+    final isTestOutcome =
+        body['action'] == 'test-connection' && data['ok'] != null;
     if (r.statusCode != 200 || (!isTestOutcome && data['error'] != null)) {
       final code = data['error'] as String?;
       throw AdminException(
@@ -191,7 +195,8 @@ class AdminService {
   }) async {
     final data = await _request({
       'action': 'test-connection',
-      if (baseUrl != null && baseUrl.trim().isNotEmpty) 'baseUrl': baseUrl.trim(),
+      if (baseUrl != null && baseUrl.trim().isNotEmpty)
+        'baseUrl': baseUrl.trim(),
       if (model != null && model.trim().isNotEmpty) 'model': model.trim(),
       if (apiKey != null && apiKey.trim().isNotEmpty) 'apiKey': apiKey.trim(),
     }, timeout: _testTimeout);

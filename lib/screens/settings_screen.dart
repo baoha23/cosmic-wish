@@ -430,9 +430,9 @@ class _VersionFooterState extends State<_VersionFooter> {
     if (_taps < _tapsRequired) return;
     _taps = 0;
     HapticFeedback.mediumImpact();
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const AdminLoginScreen()));
   }
 
   @override
@@ -469,8 +469,8 @@ class _UpdateCheckTileState extends State<_UpdateCheckTile> {
     setState(() => _checking = true);
     try {
       final release = await context.read<UpdateState>().checkForUpdate(
-            force: true,
-          );
+        force: true,
+      );
       if (!mounted) return;
       if (release != null) {
         showUpdateDialog(context);
@@ -501,7 +501,9 @@ class _UpdateCheckTileState extends State<_UpdateCheckTile> {
       ),
       child: Row(
         children: [
-          Expanded(child: Text(l.updateCheckButton, style: AppText.heading(16))),
+          Expanded(
+            child: Text(l.updateCheckButton, style: AppText.heading(16)),
+          ),
           if (_checking)
             const SizedBox(
               width: 20,

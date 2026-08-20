@@ -80,18 +80,15 @@ class UpdateService {
   /// Newest release with `version_code` greater than
   /// [currentVersionCode], or null when up to date, unreachable,
   /// malformed, or running without an anon key. Never throws.
-  Future<AppRelease?> fetchLatestUpdate({required int currentVersionCode}) async {
+  Future<AppRelease?> fetchLatestUpdate({
+    required int currentVersionCode,
+  }) async {
     if (anonKey.isEmpty) return null;
     try {
       final r = await _client
           .get(
-            Uri.parse(
-              '$restUrl/app_releases?order=version_code.desc&limit=1',
-            ),
-            headers: {
-              'apikey': anonKey,
-              'Authorization': 'Bearer $anonKey',
-            },
+            Uri.parse('$restUrl/app_releases?order=version_code.desc&limit=1'),
+            headers: {'apikey': anonKey, 'Authorization': 'Bearer $anonKey'},
           )
           .timeout(_checkTimeout);
       if (r.statusCode != 200) {
@@ -100,11 +97,8 @@ class UpdateService {
       }
       final data = jsonDecode(utf8.decode(r.bodyBytes));
       if (data is! List || data.isEmpty) return null;
-      final release = AppRelease.fromJson(
-        data.first as Map<String, dynamic>,
-      );
-      if (release.versionCode <= currentVersionCode ||
-          release.apkUrl.isEmpty) {
+      final release = AppRelease.fromJson(data.first as Map<String, dynamic>);
+      if (release.versionCode <= currentVersionCode || release.apkUrl.isEmpty) {
         return null;
       }
       return release;
@@ -143,7 +137,9 @@ class UpdateService {
         );
       }
       final contentLength = response.contentLength;
-      final total = contentLength != null && contentLength >= 0 ? contentLength : null;
+      final total = contentLength != null && contentLength >= 0
+          ? contentLength
+          : null;
       var received = 0;
       final sink = file.openWrite();
       try {
