@@ -62,21 +62,18 @@ jobs:
           flutter build apk --release
           --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
-      - name: Upload APK to Supabase Storage
+      - name: Create GitHub Release with APK
+        # Supabase Storage rejects uploads >50MB (413 EntityTooLarge),
+        # so the APK itself lives on the GitHub Release (repo is
+        # public — asset URLs download without auth) and the
+        # app_releases row points at it.
         env:
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          set -x
-          ls -la build/app/outputs/flutter-apk/
-          curl -sS -X POST \
-            "https://${SUPABASE_PROJECT_REF}.supabase.co/storage/v1/object/releases/cosmic-wish-${VERSION_NAME}.apk" \
-            -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
-            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
-            -H "x-upsert: true" \
-            -H "Content-Type: application/vnd.android.package-archive" \
-            --data-binary @build/app/outputs/flutter-apk/app-release.apk \
-            -w "\nHTTP %{http_code}\n"
+          gh release create "$GITHUB_REF_NAME" --generate-notes \
+            --title "Cosmic Wish v${VERSION_NAME}" \
+            build/app/outputs/flutter-apk/app-release.apk
+          echo "APK_URL=https://github.com/baoha23/cosmic-wish/releases/download/${GITHUB_REF_NAME}/app-release.apk" >> "$GITHUB_ENV"
 
       - name: Publish release metadata
         env:
@@ -89,11 +86,4 @@ jobs:
             -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
             -H "Content-Type: application/json" \
             -H "Prefer: resolution=merge-duplicates" \
-            -d "{\"version_code\":${VERSION_CODE},\"version_name\":\"${VERSION_NAME}\",\"apk_url\":\"https://${SUPABASE_PROJECT_REF}.supabase.co/storage/v1/object/public/releases/cosmic-wish-${VERSION_NAME}.apk\",\"notes\":${NOTES:-null}}"
-
-      - name: Attach APK to GitHub Release (archive)
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "$GITHUB_REF_NAME" --generate-notes \
-            build/app/outputs/flutter-apk/app-release.apk || true
+            -d "{\"version_code\":${VERSION_CODE},\"version_name\":\"${VERSION_NAME}\",\"apk_url\":\"${APK_URL}\",\"notes\":${NOTES:-null}}"

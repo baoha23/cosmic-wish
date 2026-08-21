@@ -129,18 +129,14 @@ ADMIN_PASSWORD=xxx bash backend/test_admin.sh
 App tự kiểm tra bảng `app_releases` khi mở; có bản mới thì hiện
 thông báo, tải APK về và mở trình cài đặt.
 
+APK nằm trên **GitHub Release** (repo public — link tải không cần
+auth); Supabase chỉ giữ metadata (bảng `app_releases`) vì Storage
+giới hạn upload 50MB/lần trong khi APK universal ~60MB.
+
 Setup một lần:
 
-1. Tạo bucket public (dùng service role key từ Settings → API):
-
-```bash
-curl -X POST "https://pjubjhrhyrtnnhavnkuk.supabase.co/storage/v1/bucket" \
-  -H "Authorization: Bearer <SERVICE_ROLE_KEY>" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"releases","public":true}'
-```
-
-2. Thêm GitHub secret `SUPABASE_SERVICE_ROLE_KEY`.
+1. Thêm GitHub secret `SUPABASE_SERVICE_ROLE_KEY` (dashboard →
+   Settings → API).
 
 Phát hành mỗi lần:
 
@@ -150,8 +146,7 @@ Phát hành mỗi lần:
    release notes).
 3. `git tag v1.3.0 && git push origin v1.3.0` — workflow
    `release.yml` làm phần còn lại: build APK universal ký cùng
-   keystore, upload lên Storage, upsert `app_releases`, đính kèm
-   GitHub Release.
+   keystore, tạo GitHub Release đính kèm APK, upsert `app_releases`.
 
 Lưu ý: APK cập nhật phải cùng chữ ký với bản đã cài (cùng
 `COSMIC_KEYSTORE_*`), và user phải đồng ý "cho phép cài ứng dụng
