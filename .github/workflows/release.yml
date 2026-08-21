@@ -67,13 +67,16 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          curl -sf -X POST \
+          set -x
+          ls -la build/app/outputs/flutter-apk/
+          curl -sS -X POST \
             "https://${SUPABASE_PROJECT_REF}.supabase.co/storage/v1/object/releases/cosmic-wish-${VERSION_NAME}.apk" \
             -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
             -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
             -H "x-upsert: true" \
             -H "Content-Type: application/vnd.android.package-archive" \
-            --data-binary @build/app/outputs/flutter-apk/app-release.apk
+            --data-binary @build/app/outputs/flutter-apk/app-release.apk \
+            -w "\nHTTP %{http_code}\n"
 
       - name: Publish release metadata
         env:
